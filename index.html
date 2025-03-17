@@ -1,0 +1,184 @@
+<head>
+  <title>drowsiness detection</title>
+<link rel="stylesheet" href="styles.css">  
+  <!-- Load required packages -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.106.2/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/scatter-gl@0.0.1/lib/scatter-gl.min.js"></script>
+<script>
+
+</script>
+
+  <!-- Add these font imports -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #4A90E2;
+      --secondary: #FF6B6B;
+      --background: #F8FBFF;
+      --surface: #FFFFFF;
+      --text: #2D3436;
+    }
+
+
+    .dashboard {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: block;
+    }
+    
+    .controls-panel {
+      background: white;
+      padding: 1rem;
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.05);
+      position: relative;
+
+    }
+    
+    .control-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+    
+    .charts {
+      display: grid;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    
+    .canvas-wrapper {
+      position: relative;
+      margin: 0 auto;
+      max-width: 640px;
+      padding:1px;
+    }
+    
+    @media (max-width: 768px) {
+      .control-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .dashboard {
+        padding: 1rem;
+      }
+      
+      .controls-panel {
+        padding: 1.5rem;
+      }
+    }
+  </style>
+
+
+</head>
+<body>
+<h1>Drowsiness Detection</h1>
+<div style="border: 5px solid #c4b9f8; 
+            border-radius: 8px; 
+            padding: 25px; 
+            margin: 20px auto; 
+            max-width: 800px; 
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 12px #c4b9f8;">
+  <h2 style="margin: 0; 
+             color: #333; 
+             line-height: 1.6; 
+             font-size: 18px; 
+             font-weight: 400;">
+    The Drowsiness Detection System is designed to monitor facial points, specifically tracking eye and mouth movements, to identify signs of drowsiness. When a predefined threshold value is exceeded, the system triggers a beep sound to alert the user, helping them stay awake and focused.<br><br>
+    This system is particularly useful while working on laptops or studying, as it serves as a reminder to take breaks when necessary, preventing excessive mental fatigue and stress. By ensuring timely alerts, it promotes better productivity and overall well-being.
+  </h2>
+</div>
+  <div id="main">
+    <div class="container">
+      <!-- Video Feed Container -->
+      <div class="canvas-wrapper">
+        <canvas id="output"></canvas>
+        <video id="video" playsinline style="
+          -webkit-transform: scaleX(-1);
+          transform: scaleX(-1);
+          visibility: hidden;
+          width: auto;
+          height: auto;
+          ">
+        </video>
+      </div>
+      <!-- Div to show facial landmarks -->
+      <div id="scatter-gl-container" style="width: 500px; height: 500px;"></div>
+      </div>
+    </div>
+  </div>
+  <div id="eyeChartContainer" class="chart-container"></div>
+  <div id="mouthChartContainer" class="chart-container"></div>
+
+ 
+        <!-- Video Feed -->
+        <div class="canvas-wrapper">
+          <canvas id="output"></canvas>
+          <video id="video" playsinline style="
+            -webkit-transform: scaleX(-1);
+            transform: scaleX(-1);
+            width: 100%;
+            height: auto;
+            border-radius: 15px;
+          " autoplay muted></video>
+        </div>
+
+        <!-- Controls Panel -->
+        <div class="controls-panel">
+          <div class="control-grid">
+            <div class="control-group">
+              <label>BLINK DELAY</label>
+              <div class="slider-container">
+                <input type="range" id="drowsinessRange" min="20" max="100" 
+                      oninput="updateTextInput(this.value)">
+                <input type="text" id="drowsinessText" 
+                      onchange="updateRangeInput(this.value)">
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label>YAWN LEVEL</label>
+              <div class="slider-container">
+                <input type="range" id="yawnRange" min="200" max="500" 
+                      oninput="updateTextInput1(this.value)">
+                <input type="text" id="yawnText" 
+                      onchange="updateRangeInput1(this.value)">
+              </div>
+            </div>
+          </div>
+
+          <div class="yawn-counter">
+            <h3> </h3>
+            <div class="count" id="yawnCounter">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="header finisher-header" style="width: 100%; height: 800px;">
+  </div>
+  
+</body>
+
+<!-- Loading Tensorflow-JS package -->
+<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.6.0/dist/tf.js"></script>
+
+<!-- Adds the WEBGL backend to the global backend registry -->
+<script>tf.setBackend('webgl').then(() => console.log('webgl backend registered'));</script>
+
+<!-- Load required Tensorflow-JS packages -->
+<script src="https://unpkg.com/@tensorflow/tfjs-core@2.4.0/dist/tf-core.js"></script>
+<script src="https://unpkg.com/@tensorflow/tfjs-converter@2.4.0/dist/tf-converter.js"></script>
+<script src="https://unpkg.com/@tensorflow/tfjs-backend-webgl@2.4.0/dist/tf-backend-webgl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js"></script>
+<script src="https://unpkg.com/@tensorflow-models/face-landmarks-detection@0.0.2/dist/face-landmarks-detection.js"></script>
+<script src="stats.js"></script>
+<script src="controller.js"></script>
+<script src="index.js"></script>
+
+
